@@ -1,3 +1,33 @@
+Function removeDublicatesFromTwoDimArray(arr)
+    Set dict = CreateObject("Scripting.Dictionary")
+    For i = LBound(arr, 1) To UBound(arr, 1)
+        If Not dict.Exists(arr(i, 1)) Then dict.Add arr(i, 1), arr(i, 1)
+    Next i
+    Dim uniqueArr As Variant
+    ReDim uniqueArr(1 To dict.Count)
+    i = 1
+    For Each Key In dict.keys
+        uniqueArr(i) = Key
+        i = i + 1
+    Next Key
+    removeDublicatesFromTwoDimArray = uniqueArr
+End Function
+
+Function removeDublicatesFromOneDimArray(arr)
+    Set dict = CreateObject("Scripting.Dictionary")
+    For i = LBound(arr) To UBound(arr)
+        If Not dict.Exists(arr(i)) Then dict.Add arr(i), arr(i)
+    Next i
+    Dim uniqueArr As Variant
+    ReDim uniqueArr(1 To dict.Count)
+    i = 1
+    For Each Key In dict.keys
+        uniqueArr(i) = Key
+        i = i + 1
+    Next Key
+    removeDublicatesFromOneDimArray = uniqueArr
+End Function
+
 Sub Stats()
 
     Dim e, element, i, j, fileIndex, listKpRow As Long
@@ -55,8 +85,8 @@ Sub Stats()
         Dim listKpIDList, listKpDistrictsList As Variant
         listKpIDList = .Range(.Cells(findIDCell.Row + 1, findIDCell.Column), .Cells(lastRowListKp, findIDCell.Column))
         listKpDistrictsList = .Range(.Cells(findDistrictCell.Row + 1, findDistrictCell.Column), .Cells(lastRowListKp, findDistrictCell.Column))
-        Debug.Print "listKpIDList: " & UBound(listKpIDList)
-        Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
+        'Debug.Print "listKpIDList: " & UBound(listKpIDList)
+        'Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
         listKpWb.Close SaveChanges:=False
     End With
     
@@ -72,6 +102,7 @@ Sub Stats()
         failuresDistrictsList = .Range(.Cells(findDistrictCell.Row + 1, findDistrictCell.Column), .Cells(lastRowFailures, findDistrictCell.Column))
         failuresProblemsList = .Range(.Cells(findProblemCell.Row + 1, findProblemCell.Column), .Cells(lastRowFailures, findProblemCell.Column))
         failuresCarriersList = .Range(.Cells(findCarrierCell.Row + 1, findCarrierCell.Column), .Cells(lastRowFailures, findCarrierCell.Column))
+        failuresProblemsListWithoutDublicates = removeDublicatesFromTwoDimArray(failuresProblemsList)
     End With
     
     For e = LBound(failuresIDList) To UBound(failuresIDList) 'заполнение района из реестра кп по коду кп
@@ -122,19 +153,47 @@ Sub Stats()
         Next i
         Dim problems As Variant
         ReDim problems(1 To UBound(districts, 1))
+        Dim allProblems() As String
         For i = LBound(districts, 1) To UBound(districts, 1)
         counter = 0
             For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
                 If districts(i, 1) = failuresDistrictsList(n, 1) Then
                     problem = failuresProblemsList(n, 1)
-                    If InStr(problems(i), problem) = 0 Then
+                    ' If InStr(problems(i), problem) = 0 Then
                         counter = counter + 1
-                        problems(i) = problems(i) & counter & ". " & problem & vbLf
-                    End If
+                        ' problems(i) = problems(i) & counter & ". " & problem & vbLf
+                        ReDim Preserve allProblems(1 To counter)
+                        allProblems(counter) = problem
+                        problems(i) = allProblems
+                    ' End If
                 End If
             Next n
-            If Right(problems(i), 1) = vbLf Then problems(i) = Left(problems(i), Len(problems(i)) - 1) Else If problems(i) = "" Then problems(i) = "–"
+            
+            For w = LBound(failuresProblemsListWithoutDublicates) To UBound(failuresProblemsListWithoutDublicates)
+                counter = 0
+                For q = LBound(allProblems) To UBound(allProblems)
+                    If allProblems(q) = failuresProblemsListWithoutDublicates(w) Then
+                        counter = counter + 1
+                    End If
+                Next q
+                failuresProblemsListWithoutDublicates(w) = failuresProblemsListWithoutDublicates(w) & ": " & counter
+            Next w
+            
+            Erase allProblems
+            'If Right(problems(i), 1) = vbLf Then problems(i) = Left(problems(i), Len(problems(i)) - 1) Else If problems(i) = "" Then problems(i) = "–"
         Next i
+        
+        ' For i = LBound(districts, 1) To UBound(districts, 1)
+        '     For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
+        '         If districts(i, 1) = failuresDistrictsList(n, 1) Then
+        '             problem = failuresProblemsList(n, 1)
+        '             If not InStr(problems(i), problem & ": ") = 0 Then
+        '                 problems(i) = Left(problems(i), InStr(problems(i), problem & ": ") + Len(problem)) & "1" & Right(problems(i), Len(problems(i)) - InStr(problems(i), problem & ": "))
+        '             End If
+        '         End If
+        '     Next n
+        '     If Right(problems(i), 1) = vbLf Then problems(i) = Left(problems(i), Len(problems(i)) - 1) Else If problems(i) = "" Then problems(i) = "–"
+        ' Next i
         
         Dim resultDistrictsFact As Variant
         Dim effiency As Variant
@@ -180,3 +239,4 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
+
