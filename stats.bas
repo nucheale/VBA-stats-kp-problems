@@ -6,7 +6,7 @@ Function removeDublicatesFromTwoDimArray(arr)
     Dim uniqueArr As Variant
     ReDim uniqueArr(1 To dict.Count)
     i = 1
-    For Each Key In dict.keys
+    For Each Key In dict.Keys
         uniqueArr(i) = Key
         i = i + 1
     Next Key
@@ -21,7 +21,7 @@ Function removeDublicatesFromOneDimArray(arr)
     Dim uniqueArr As Variant
     ReDim uniqueArr(1 To dict.Count)
     i = 1
-    For Each Key In dict.keys
+    For Each Key In dict.Keys
         uniqueArr(i) = Key
         i = i + 1
     Next Key
@@ -32,7 +32,7 @@ Sub Stats()
 
     Dim e, element, i, j, fileIndex, listKpRow As Long
     
-    Set macroWb = ActiveWorkbook
+    Set macrowb = ActiveWorkbook
     
     filesToOpen = Application.GetOpenFilename(FileFilter:="All files (*.*), *.*", MultiSelect:=True, Title:="Выберите файлы")
     If TypeName(filesToOpen) = "Boolean" Then Exit Sub
@@ -43,7 +43,7 @@ Sub Stats()
         .Calculation = xlCalculationManual
     End With
     
-    With macroWb.Worksheets("Справочник")
+    With macrowb.Worksheets("Справочник")
         Dim districts, carriers, files As Variant
         districts = .ListObjects("Районы").DataBodyRange.Value
         carriers = .ListObjects("Перевозчики").DataBodyRange.Value
@@ -64,8 +64,11 @@ Sub Stats()
             Case currentWb.Name Like "*Список КП по участкам*"
                 lastRow = currentWb.Sheets(1).Cells.SpecialCells(xlLastCell).Row
                 lastColumn = currentWb.Sheets(1).Cells.SpecialCells(xlLastCell).Column
-                Set listData = currentWb.Worksheets(1).Range(currentWb.Worksheets(1).Cells(4, 1), currentWb.Worksheets(1).Cells(lastRow, lastColumn))
-                listData.Copy Destination:=listKpWb.Sheets(1).Cells(listKpRow + 1, 1)
+                Dim listData As Variant
+                listData = currentWb.Worksheets(1).Range(currentWb.Worksheets(1).Cells(4, 1), currentWb.Worksheets(1).Cells(lastRow, lastColumn))
+                '  Set listData = currentWb.Worksheets(1).Range(currentWb.Worksheets(1).Cells(4, 1), currentWb.Worksheets(1).Cells(lastRow, lastColumn))
+                '  listData.Copy Destination:=listKpWb.Sheets(1).Cells(listKpRow + 1, 1)
+                listKpWb.Sheets(1).Cells(listKpRow + 1, 1).Resize(UBound(listData), UBound(listData, 2)).Value = listData
                 listKpRow = listKpWb.Sheets(1).Cells.SpecialCells(xlLastCell).Row
                 currentWb.Close SaveChanges:=False
             Case Else
@@ -85,8 +88,8 @@ Sub Stats()
         Dim listKpIDList, listKpDistrictsList As Variant
         listKpIDList = .Range(.Cells(findIDCell.Row + 1, findIDCell.Column), .Cells(lastRowListKp, findIDCell.Column))
         listKpDistrictsList = .Range(.Cells(findDistrictCell.Row + 1, findDistrictCell.Column), .Cells(lastRowListKp, findDistrictCell.Column))
-        'Debug.Print "listKpIDList: " & UBound(listKpIDList)
-        'Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
+        Debug.Print "listKpIDList: " & UBound(listKpIDList)
+        Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
         listKpWb.Close SaveChanges:=False
     End With
     
@@ -105,8 +108,10 @@ Sub Stats()
         failuresProblemsListWithoutDublicates = removeDublicatesFromTwoDimArray(failuresProblemsList)
     End With
     
-    For e = LBound(failuresIDList) To UBound(failuresIDList) 'заполнение района из реестра кп по коду кп
-        For n = LBound(listKpIDList) To UBound(listKpIDList)
+   ' On Error Resume Next
+    For e = LBound(failuresIDList) + 1 To UBound(failuresIDList) 'заполнение района из реестра кп по коду кп
+    failuresIDList(e, 1) = CLng(failuresIDList(e, 1))
+        For n = LBound(listKpIDList) + 1 To UBound(listKpIDList)
             If listKpIDList(n, 1) = failuresIDList(e, 1) Then
                 failuresDistrictsList(e, 1) = listKpDistrictsList(n, 1)
                 Exit For
@@ -115,6 +120,7 @@ Sub Stats()
             End If
         Next n
     Next e
+    On Error GoTo 0
         
     With failuresKpWb.Sheets("report")
         .Cells(findDistrictCell.Row + 1, findDistrictCell.Column).Resize(UBound(failuresDistrictsList), UBound(failuresDistrictsList, 2)).Value = failuresDistrictsList 'заполнение района
@@ -151,50 +157,83 @@ Sub Stats()
             Next n
             resultDistrictsProblems(i) = sumProblems
         Next i
+
         Dim problems As Variant
-        ReDim problems(1 To UBound(districts, 1))
-        Dim allProblems() As String
-        For i = LBound(districts, 1) To UBound(districts, 1)
-        counter = 0
+        ReDim problems(1 To UBound(districts) * UBound(failuresProblemsListWithoutDublicates), 1 To 3)
+
+        counter = 1
+        For d = LBound(districts, 1) To UBound(districts, 1)
+            For j = LBound(failuresProblemsListWithoutDublicates) To UBound(failuresProblemsListWithoutDublicates)
+                    problems(counter, 1) = districts(d, 1)
+                    problems(counter, 2) = failuresProblemsListWithoutDublicates(j)
+                    counter = counter + 1
+            Next j
+        Next d
+        
+        For i = LBound(problems, 1) To UBound(problems, 1)
             For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
-                If districts(i, 1) = failuresDistrictsList(n, 1) Then
-                    problem = failuresProblemsList(n, 1)
-                    ' If InStr(problems(i), problem) = 0 Then
-                        counter = counter + 1
-                        ' problems(i) = problems(i) & counter & ". " & problem & vbLf
-                        ReDim Preserve allProblems(1 To counter)
-                        allProblems(counter) = problem
-                        problems(i) = allProblems
-                    ' End If
+                If failuresDistrictsList(n, 1) = problems(i, 1) Then
+                    If failuresProblemsList(n, 1) = problems(i, 2) Then problems(i, 3) = CInt(problems(i, 3)) + 1
                 End If
             Next n
-            
-            For w = LBound(failuresProblemsListWithoutDublicates) To UBound(failuresProblemsListWithoutDublicates)
-                counter = 0
-                For q = LBound(allProblems) To UBound(allProblems)
-                    If allProblems(q) = failuresProblemsListWithoutDublicates(w) Then
-                        counter = counter + 1
-                    End If
-                Next q
-                failuresProblemsListWithoutDublicates(w) = failuresProblemsListWithoutDublicates(w) & ": " & counter
-            Next w
-            
-            Erase allProblems
-            'If Right(problems(i), 1) = vbLf Then problems(i) = Left(problems(i), Len(problems(i)) - 1) Else If problems(i) = "" Then problems(i) = "–"
+            If problems(i, 3) = Empty Then
+                problems(i, 1) = Empty
+                problems(i, 2) = Empty
+            End If
         Next i
         
-        ' For i = LBound(districts, 1) To UBound(districts, 1)
-        '     For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
-        '         If districts(i, 1) = failuresDistrictsList(n, 1) Then
-        '             problem = failuresProblemsList(n, 1)
-        '             If not InStr(problems(i), problem & ": ") = 0 Then
-        '                 problems(i) = Left(problems(i), InStr(problems(i), problem & ": ") + Len(problem)) & "1" & Right(problems(i), Len(problems(i)) - InStr(problems(i), problem & ": "))
+        For i = LBound(problems, 1) To UBound(problems, 1) - 1 'сортировка по убыванию
+            For j = i + 1 To UBound(problems, 1)
+                If problems(i, 3) < problems(j, 3) Then
+                    For k = 1 To 3
+                        tempValue = problems(i, k)
+                        problems(i, k) = problems(j, k)
+                        problems(j, k) = tempValue
+                    Next k
+                End If
+            Next j
+        Next i
+
+        ' For i = LBound(problems) To UBound(problems)
+        '     problemsCut(i, 1) = problems(i, 1)
+        '     dict.RemoveAll
+        '     For j = LBound(problems) To UBound(problems)
+        '         If problems(j, 1) = problems(i, 1) Then
+        '             If j <= 4 Then
+        '                 problemsCut(i, 2) = problemsCut(i, 2) & problemsCut(j, 2) & " "
+        '             Else
+        '                 If dict.Exists(problems(j, 2)) Then
+        '                     dict(problems(j, 2)) = dict(problems(j, 2)) + problems(j, 3)
+        '                 Else
+        '                     dict.Add problems(j, 2), problems(j, 3)
+        '                 End If
         '             End If
         '         End If
-        '     Next n
-        '     If Right(problems(i), 1) = vbLf Then problems(i) = Left(problems(i), Len(problems(i)) - 1) Else If problems(i) = "" Then problems(i) = "–"
+        '     Next j
+            
+        '     If dict.Count > 0 Then
+        '         problemsCut(i, 2) = problemsCut(i, 2) & "Иные"
+        '         For Each Key In dict.Keys
+        '             problemsCut(i, 2) = problemsCut(i, 2) & " " & Key & " (" & dict(Key) & ")"
+        '         Next Key
+        '     End If
+        '     problemsCut(i, 3) = problems(i, 3)
         ' Next i
+
+        Dim problems2 As Variant
+        ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
+        For n = LBound(districts, 1) To UBound(districts, 1)
+            For i = LBound(problems) To UBound(problems)
+                If districts(n, 1) = problems(i, 1) Then problems2(n) = problems2(n) & problems(i, 2) & ": " & problems(i, 3) & vbLf
+            Next i
+        Next n
         
+        sumProblemsAll = 0
+        For i = LBound(problems) To UBound(problems)
+            sumProblemsAll = sumProblemsAll + CInt(problems(i, 3))
+        Next i
+        Debug.Print "sumProblemsAll: " & sumProblemsAll
+
         Dim resultDistrictsFact As Variant
         Dim effiency As Variant
         ReDim resultDistrictsFact(1 To UBound(districts, 1))
@@ -206,7 +245,7 @@ Sub Stats()
     End With
 
     
-    macroWb.Sheets("Шаблон").Copy After:=macroWb.Sheets(macroWb.Sheets.Count - 1)
+    macrowb.Sheets("Шаблон").Copy After:=macrowb.Sheets(macrowb.Sheets.Count - 1)
     Set newWs = ActiveSheet
     ' Set newWs = macroWb.Sheets.Add(After:=macroWb.Sheets(macroWb.Sheets.Count - 1))
     currTime = Array(Hour(Now), Minute(Now), Second(Now))
@@ -221,7 +260,7 @@ Sub Stats()
             Cells(i + 2, 2) = districts(i, 2)
             Cells(i + 2, 3) = resultDistrictsPlan(i)
             Cells(i + 2, 4) = resultDistrictsFact(i)
-            Cells(i + 2, 5) = problems(i)
+            Cells(i + 2, 5) = problems2(i)
             Cells(i + 2, 6) = effiency(i)
         Next i
         lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
@@ -239,4 +278,3 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
-
