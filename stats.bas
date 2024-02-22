@@ -66,8 +66,6 @@ Sub Stats()
                 lastColumn = currentWb.Sheets(1).Cells.SpecialCells(xlLastCell).Column
                 Dim listData As Variant
                 listData = currentWb.Worksheets(1).Range(currentWb.Worksheets(1).Cells(4, 1), currentWb.Worksheets(1).Cells(lastRow, lastColumn))
-                '  Set listData = currentWb.Worksheets(1).Range(currentWb.Worksheets(1).Cells(4, 1), currentWb.Worksheets(1).Cells(lastRow, lastColumn))
-                '  listData.Copy Destination:=listKpWb.Sheets(1).Cells(listKpRow + 1, 1)
                 listKpWb.Sheets(1).Cells(listKpRow + 1, 1).Resize(UBound(listData), UBound(listData, 2)).Value = listData
                 listKpRow = listKpWb.Sheets(1).Cells.SpecialCells(xlLastCell).Row
                 currentWb.Close SaveChanges:=False
@@ -264,6 +262,35 @@ Sub Stats()
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
+        
+        Set pivotRange = .Range(.Cells(2, 1), .Cells(lastRowMacroWb, lastColumnMacroWb))
+        Set pivotDestination = .Cells(lastRowMacroWb + 5, 1)
+        Set pivotTableResult = .PivotTableWizard(SourceType:=xlDatabase, SourceData:=pivotRange, TableDestination:=pivotDestination)
+        With pivotTableResult
+            .ColumnGrand = True
+            .HasAutoFormat = True
+            .RowGrand = True
+            .SaveData = True
+            .InGridDropZones = False
+            .DisplayFieldCaptions = True
+            .TableStyle2 = "PivotStyleDark2"
+            .RowAxisLayout xlCompactRow
+        End With
+        With pivotTableResult.PivotFields("Район")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        With pivotTableResult.PivotFields("Генеральный перевозчик")
+            .Orientation = xlColumnField
+            .Position = 1
+        End With
+        pivotTableResult.AddDataField pivotTableResult.PivotFields("% выполнения"), "Среднее по полю % выполнения", xlAverage
+        .Range(.Cells(lastRowMacroWb + 5, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).NumberFormat = "0%"
+        .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
+        .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).HorizontalAlignment = xlCenter
+        .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).VerticalAlignment = xlCenter
+
+        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit
     End With
 
     statsKpWb.Close SaveChanges:=False
