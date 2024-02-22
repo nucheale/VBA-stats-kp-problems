@@ -223,8 +223,16 @@ Sub Stats()
         Dim problems2 As Variant
         ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
         For n = LBound(districts, 1) To UBound(districts, 1)
+            counter = 1
             For i = LBound(problems) To UBound(problems)
-                If districts(n, 1) = problems(i, 1) Then problems2(n) = problems2(n) & problems(i, 2) & ": " & problems(i, 3) & vbLf
+                If districts(n, 1) = problems(i, 1) Then
+                    If counter <= 4 Then
+                        problems2(n) = problems2(n) & problems(i, 2) & ": " & problems(i, 3) & vbLf
+                        counter = counter + 1
+                    Else
+                        problems2(n) = problems2(n) & "Иные" & ": " & problems(i, 3) & vbLf
+                    End If
+                End If
             Next i
         Next n
         
