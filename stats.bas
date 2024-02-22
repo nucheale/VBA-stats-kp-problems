@@ -88,8 +88,8 @@ Sub Stats()
         Dim listKpIDList, listKpDistrictsList As Variant
         listKpIDList = .Range(.Cells(findIDCell.Row + 1, findIDCell.Column), .Cells(lastRowListKp, findIDCell.Column))
         listKpDistrictsList = .Range(.Cells(findDistrictCell.Row + 1, findDistrictCell.Column), .Cells(lastRowListKp, findDistrictCell.Column))
-        Debug.Print "listKpIDList: " & UBound(listKpIDList)
-        Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
+        ' Debug.Print "listKpIDList: " & UBound(listKpIDList)
+        ' Debug.Print "listKpDistrictsList: " & UBound(listKpDistrictsList)
         listKpWb.Close SaveChanges:=False
     End With
     
@@ -194,62 +194,43 @@ Sub Stats()
             Next j
         Next i
 
-        ' For i = LBound(problems) To UBound(problems)
-        '     problemsCut(i, 1) = problems(i, 1)
-        '     dict.RemoveAll
-        '     For j = LBound(problems) To UBound(problems)
-        '         If problems(j, 1) = problems(i, 1) Then
-        '             If j <= 4 Then
-        '                 problemsCut(i, 2) = problemsCut(i, 2) & problemsCut(j, 2) & " "
-        '             Else
-        '                 If dict.Exists(problems(j, 2)) Then
-        '                     dict(problems(j, 2)) = dict(problems(j, 2)) + problems(j, 3)
-        '                 Else
-        '                     dict.Add problems(j, 2), problems(j, 3)
-        '                 End If
-        '             End If
-        '         End If
-        '     Next j
-            
-        '     If dict.Count > 0 Then
-        '         problemsCut(i, 2) = problemsCut(i, 2) & "Иные"
-        '         For Each Key In dict.Keys
-        '             problemsCut(i, 2) = problemsCut(i, 2) & " " & Key & " (" & dict(Key) & ")"
-        '         Next Key
-        '     End If
-        '     problemsCut(i, 3) = problems(i, 3)
-        ' Next i
-
         Dim problems2 As Variant
         ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
         For n = LBound(districts, 1) To UBound(districts, 1)
             counter = 1
+            otherProblems = 0
             For i = LBound(problems) To UBound(problems)
                 If districts(n, 1) = problems(i, 1) Then
                     If counter <= 4 Then
                         problems2(n) = problems2(n) & problems(i, 2) & ": " & problems(i, 3) & vbLf
                         counter = counter + 1
                     Else
-                        problems2(n) = problems2(n) & "Иные" & ": " & problems(i, 3) & vbLf
+                        otherProblems = otherProblems + CInt(problems(i, 3))
                     End If
                 End If
             Next i
+            problems2(n) = problems2(n) & "Иные" & ": " & otherProblems
         Next n
         
         sumProblemsAll = 0
         For i = LBound(problems) To UBound(problems)
             sumProblemsAll = sumProblemsAll + CInt(problems(i, 3))
         Next i
-        Debug.Print "sumProblemsAll: " & sumProblemsAll
 
         Dim resultDistrictsFact As Variant
         Dim effiency As Variant
         ReDim resultDistrictsFact(1 To UBound(districts, 1))
         ReDim effiency(1 To UBound(districts, 1)) As Double
+        sumFact = 0
+        sumPlan = 0
         For i = LBound(resultDistrictsFact) To UBound(resultDistrictsFact)
             resultDistrictsFact(i) = resultDistrictsPlan(i) - resultDistrictsProblems(i)
             effiency(i) = (resultDistrictsPlan(i) - resultDistrictsProblems(i)) / resultDistrictsPlan(i)
+            sumFact = sumFact + resultDistrictsFact(i)
+            sumPlan = sumPlan + resultDistrictsPlan(i)
+            sumEffiency = sumEffiency + effiency(i)
         Next i
+            averageEffiency = sumEffiency / UBound(effiency)
     End With
 
     
@@ -273,7 +254,16 @@ Sub Stats()
         Next i
         lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
         lastColumnMacroWb = .Cells.SpecialCells(xlLastCell).Column
-        .Range(.Cells(2, 1), .Cells(lastRowMacroWb, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
+        .Cells(lastRowMacroWb + 1, 1) = "Итого"
+        .Cells(lastRowMacroWb + 1, 3) = sumPlan
+        .Cells(lastRowMacroWb + 1, 4) = sumFact
+        .Cells(lastRowMacroWb + 1, 5) = sumProblemsAll
+        .Cells(lastRowMacroWb + 1, 6) = averageEffiency
+        .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, 2)).Merge
+        .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Font.Bold = True
+        .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
+        .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
+        .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
     End With
 
     statsKpWb.Close SaveChanges:=False
