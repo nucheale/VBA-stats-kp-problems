@@ -106,7 +106,6 @@ Sub Stats()
         failuresProblemsListWithoutDublicates = removeDublicatesFromTwoDimArray(failuresProblemsList)
     End With
     
-   ' On Error Resume Next
     For e = LBound(failuresIDList) + 1 To UBound(failuresIDList) 'заполнение района из реестра кп по коду кп
     failuresIDList(e, 1) = CLng(failuresIDList(e, 1))
         For n = LBound(listKpIDList) + 1 To UBound(listKpIDList)
@@ -118,7 +117,6 @@ Sub Stats()
             End If
         Next n
     Next e
-    On Error GoTo 0
         
     With failuresKpWb.Sheets("report")
         .Cells(findDistrictCell.Row + 1, findDistrictCell.Column).Resize(UBound(failuresDistrictsList), UBound(failuresDistrictsList, 2)).Value = failuresDistrictsList 'заполнение района
@@ -134,7 +132,7 @@ Sub Stats()
         statsWbKgPlan = .Range(.Cells(findPlanCell.Row + 1, findPlanCell.Column), .Cells(lastRowStatsKp, findPlanCell.Column))
         Dim resultDistrictsPlan As Variant
         ReDim resultDistrictsPlan(1 To UBound(districts, 1))
-        For i = LBound(districts, 1) To UBound(districts, 1)
+        For i = LBound(districts, 1) To UBound(districts, 1) 'плановое количество КГ к вывозу по району 
             sumPlan = 0
             For n = LBound(statsWbKgDistricts, 1) To UBound(statsWbKgDistricts, 1)
                 If districts(i, 1) = statsWbKgDistricts(n, 1) Then
@@ -148,7 +146,7 @@ Sub Stats()
     With failuresKpWb.Sheets("report")
         Dim resultDistrictsProblems As Variant
         ReDim resultDistrictsProblems(1 To UBound(districts, 1))
-        For i = LBound(districts, 1) To UBound(districts, 1)
+        For i = LBound(districts, 1) To UBound(districts, 1) 'суммарное количество проблем по району
             sumProblems = 0
             For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
                 If districts(i, 1) = failuresDistrictsList(n, 1) Then sumProblems = sumProblems + 1
@@ -168,7 +166,7 @@ Sub Stats()
             Next j
         Next d
         
-        For i = LBound(problems, 1) To UBound(problems, 1)
+        For i = LBound(problems, 1) To UBound(problems, 1) 'список всех проблем: Район Проблема Количество
             For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
                 If failuresDistrictsList(n, 1) = problems(i, 1) Then
                     If failuresProblemsList(n, 1) = problems(i, 2) Then problems(i, 3) = CInt(problems(i, 3)) + 1
@@ -194,7 +192,7 @@ Sub Stats()
 
         Dim problems2 As Variant
         ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
-        For n = LBound(districts, 1) To UBound(districts, 1)
+        For n = LBound(districts, 1) To UBound(districts, 1) 'находим 4 самые популярные проблемы, считаем количество, остальные проблемы считаются как Иные
             counter = 1
             otherProblems = 0
             For i = LBound(problems) To UBound(problems)
@@ -211,7 +209,7 @@ Sub Stats()
         Next n
         
         sumProblemsAll = 0
-        For i = LBound(problems) To UBound(problems)
+        For i = LBound(problems) To UBound(problems) 'итоговое количество проблем по всем районам
             sumProblemsAll = sumProblemsAll + CInt(problems(i, 3))
         Next i
 
@@ -228,7 +226,7 @@ Sub Stats()
             sumPlan = sumPlan + resultDistrictsPlan(i)
             sumEffiency = sumEffiency + effiency(i)
         Next i
-            averageEffiency = sumEffiency / UBound(effiency)
+            averageEffiency = sumEffiency / UBound(effiency) 'средний % выполнения
     End With
 
     
@@ -252,7 +250,7 @@ Sub Stats()
         Next i
         lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
         lastColumnMacroWb = .Cells.SpecialCells(xlLastCell).Column
-        .Cells(lastRowMacroWb + 1, 1) = "Итого"
+        .Cells(lastRowMacroWb + 1, 1) = "Итого" 'строка с итогами заполнение и форматирование
         .Cells(lastRowMacroWb + 1, 3) = sumPlan
         .Cells(lastRowMacroWb + 1, 4) = sumFact
         .Cells(lastRowMacroWb + 1, 5) = sumProblemsAll
@@ -262,6 +260,8 @@ Sub Stats()
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
+        
+        '---------------------------Сводная таблица---------------------------
         
         Set pivotRange = .Range(.Cells(2, 1), .Cells(lastRowMacroWb, lastColumnMacroWb))
         Set pivotDestination = .Cells(lastRowMacroWb + 5, 1)
@@ -289,7 +289,9 @@ Sub Stats()
         .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
         .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).VerticalAlignment = xlCenter
-
+        
+        '---------------------------Сводная таблица конец---------------------------
+        
         .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit
     End With
 
