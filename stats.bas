@@ -48,6 +48,7 @@ Sub Stats()
         districts = .ListObjects("Районы").DataBodyRange.Value
         carriers = .ListObjects("Перевозчики").DataBodyRange.Value
         files = .ListObjects("Файлы").DataBodyRange.Value
+        userProblems = .ListObjects("Проблемы").DataBodyRange.Value
     End With
     
     Set listKpWb = Application.Workbooks.Add
@@ -132,7 +133,7 @@ Sub Stats()
         statsWbKgPlan = .Range(.Cells(findPlanCell.Row + 1, findPlanCell.Column), .Cells(lastRowStatsKp, findPlanCell.Column))
         Dim resultDistrictsPlan As Variant
         ReDim resultDistrictsPlan(1 To UBound(districts, 1))
-        For i = LBound(districts, 1) To UBound(districts, 1) 'плановое количество КГ к вывозу по району 
+        For i = LBound(districts, 1) To UBound(districts, 1) 'плановое количество КГ к вывозу по району
             sumPlan = 0
             For n = LBound(statsWbKgDistricts, 1) To UBound(statsWbKgDistricts, 1)
                 If districts(i, 1) = statsWbKgDistricts(n, 1) Then
@@ -178,36 +179,52 @@ Sub Stats()
             End If
         Next i
         
-        For i = LBound(problems, 1) To UBound(problems, 1) - 1 'сортировка по убыванию
-            For j = i + 1 To UBound(problems, 1)
-                If problems(i, 3) < problems(j, 3) Then
-                    For k = 1 To 3
-                        tempValue = problems(i, k)
-                        problems(i, k) = problems(j, k)
-                        problems(j, k) = tempValue
-                    Next k
-                End If
-            Next j
-        Next i
+        ' For i = LBound(problems, 1) To UBound(problems, 1) - 1 'сортировка по убыванию не нужна, если ищем не самые популярные проблема, а конкретные
+        '     For j = i + 1 To UBound(problems, 1)
+        '         If problems(i, 3) < problems(j, 3) Then
+        '             For k = 1 To 3
+        '                 tempValue = problems(i, k)
+        '                 problems(i, k) = problems(j, k)
+        '                 problems(j, k) = tempValue
+        '             Next k
+        '         End If
+        '     Next j
+        ' Next i
 
         Dim problems2 As Variant
         ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
-        For n = LBound(districts, 1) To UBound(districts, 1) 'находим 4 самые популярные проблемы, считаем количество, остальные проблемы считаются как Иные
-            counter = 1
-            otherProblems = 0
-            For i = LBound(problems) To UBound(problems)
-                If districts(n, 1) = problems(i, 1) Then
-                    If counter <= 4 Then
-                        problems2(n) = problems2(n) & problems(i, 2) & ": " & problems(i, 3) & vbLf
-                        counter = counter + 1
-                    Else
-                        otherProblems = otherProblems + CInt(problems(i, 3))
+        
+        For n = LBound(districts, 1) To UBound(districts, 1)
+            For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
+                finded = False
+                For i = LBound(problems) To UBound(problems)
+                    If districts(n, 1) = problems(i, 1) Then
+                        If userProblems(ii, 1) = problems(i, 2) Then
+                            problems2(n) = problems2(n) & userProblems(ii, 1) & ": " & problems(i, 3) & vbLf
+                            finded = True
+                        End If  
                     End If
-                End If
-            Next i
+                Next i
+                If Not finded Then problems2(n) = problems2(n) & userProblems(ii, 1) & ": 0" & vbLf
+            Next ii
+        Next n
+
+        For n = LBound(districts, 1) To UBound(districts, 1)
+            otherProblems = 0
+                For i = LBound(problems) To UBound(problems)
+                    If districts(n, 1) = problems(i, 1) Then
+                        finded = False
+                        For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
+                            If userProblems(ii, 1) = problems(i, 2) Then
+                                finded = True
+                            End If
+                        Next ii
+                        If Not finded Then otherProblems = otherProblems + CInt(problems(i, 3))
+                    End If
+                Next i
             problems2(n) = problems2(n) & "Иные" & ": " & otherProblems
         Next n
-        
+
         sumProblemsAll = 0
         For i = LBound(problems) To UBound(problems) 'итоговое количество проблем по всем районам
             sumProblemsAll = sumProblemsAll + CInt(problems(i, 3))
