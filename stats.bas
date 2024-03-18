@@ -197,7 +197,7 @@ Sub Stats()
             Next ii
         Next n
 
-        For n = LBound(districts, 1) To UBound(districts, 1)
+        For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста Иные проблемы
             otherProblems = 0
                 For i = LBound(problems) To UBound(problems)
                     If districts(n, 1) = problems(i, 1) Then
@@ -245,6 +245,7 @@ Sub Stats()
     newWs.Name = Date & "_" & currTime(0) & "_" & currTime(1) & "_" & currTime(2)
     With newWs
         .Cells(1, 1) = "Отчет за " & reportDate
+        .Cells(2, 7).Resize(UBound(userProblems), UBound(userProblems, 2)).Value = userProblems
         For i = LBound(districts) To UBound(districts)
             Cells(i + 2, 1) = districts(i, 1)
             Cells(i + 2, 2) = districts(i, 2)
