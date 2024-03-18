@@ -178,23 +178,11 @@ Sub Stats()
                 problems(i, 2) = Empty
             End If
         Next i
-        
-        ' For i = LBound(problems, 1) To UBound(problems, 1) - 1 'сортировка по убыванию не нужна, если ищем не самые популярные проблема, а конкретные
-        '     For j = i + 1 To UBound(problems, 1)
-        '         If problems(i, 3) < problems(j, 3) Then
-        '             For k = 1 To 3
-        '                 tempValue = problems(i, k)
-        '                 problems(i, k) = problems(j, k)
-        '                 problems(j, k) = tempValue
-        '             Next k
-        '         End If
-        '     Next j
-        ' Next i
 
         Dim problems2 As Variant
         ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
         
-        For n = LBound(districts, 1) To UBound(districts, 1)
+        For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста: Проблема - Количество
             For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
                 finded = False
                 For i = LBound(problems) To UBound(problems)
