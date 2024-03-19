@@ -28,6 +28,27 @@ Function removeDublicatesFromOneDimArray(arr)
     removeDublicatesFromOneDimArray = uniqueArr
 End Function
 
+Function ReDim2D(arr, Optional dRow% = 1)
+    ' возвращает 2D-массив с измененным на dRow числом СТРОК
+    Dim L1&, U1&
+    Dim L2&, U2&
+    Dim tArr()
+    Dim RR&, CC&
+    L1 = LBound(arr, 1)
+    U1 = UBound(arr, 1)
+    L2 = LBound(arr, 2)
+    U2 = UBound(arr, 2)
+    ReDim tArr(L1 To U1 + dRow, L2 To U2)
+    For RR = L1 To U1
+        On Error Resume Next
+        For CC = L2 To U2
+            tArr(RR, CC) = arr(RR, CC)
+        Next CC
+        On Error GoTo 0
+    Next RR
+    ReDim2D = tArr
+End Function
+
 Sub Stats()
 
     Dim e, element, i, j, fileIndex, listKpRow As Long
@@ -44,11 +65,13 @@ Sub Stats()
     End With
     
     With macrowb.Worksheets("Справочник")
-        Dim districts, carriers, files As Variant
+        Dim districts, carriers, files, userProblems As Variant
         districts = .ListObjects("Районы").DataBodyRange.Value
         carriers = .ListObjects("Перевозчики").DataBodyRange.Value
         files = .ListObjects("Файлы").DataBodyRange.Value
         userProblems = .ListObjects("Проблемы").DataBodyRange.Value
+        userProblems = ReDim2D(userProblems)
+        userProblems(UBound(userProblems, 1), 1) = "Иные"
     End With
     
     Set listKpWb = Application.Workbooks.Add
@@ -159,7 +182,7 @@ Sub Stats()
         ReDim problems(1 To UBound(districts) * UBound(failuresProblemsListWithoutDublicates), 1 To 3)
 
         counter = 1
-        For d = LBound(districts, 1) To UBound(districts, 1)
+        For d = LBound(districts, 1) To UBound(districts, 1) 'список всех проблем: Район Проблема
             For j = LBound(failuresProblemsListWithoutDublicates) To UBound(failuresProblemsListWithoutDublicates)
                     problems(counter, 1) = districts(d, 1)
                     problems(counter, 2) = failuresProblemsListWithoutDublicates(j)
@@ -167,7 +190,7 @@ Sub Stats()
             Next j
         Next d
         
-        For i = LBound(problems, 1) To UBound(problems, 1) 'список всех проблем: Район Проблема Количество
+        For i = LBound(problems, 1) To UBound(problems, 1) 'список и количество всех проблем: Район Проблема Количество
             For n = LBound(failuresDistrictsList, 1) To UBound(failuresDistrictsList, 1)
                 If failuresDistrictsList(n, 1) = problems(i, 1) Then
                     If failuresProblemsList(n, 1) = problems(i, 2) Then problems(i, 3) = CInt(problems(i, 3)) + 1
@@ -180,38 +203,76 @@ Sub Stats()
         Next i
 
         Dim problems2 As Variant
-        ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
+        ' ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
         
-        For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста: Проблема - Количество
-            For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
-                finded = False
-                For i = LBound(problems) To UBound(problems)
-                    If districts(n, 1) = problems(i, 1) Then
-                        If userProblems(ii, 1) = problems(i, 2) Then
-                            problems2(n) = problems2(n) & userProblems(ii, 1) & ": " & problems(i, 3) & vbLf
-                            finded = True
-                        End If  
-                    End If
-                Next i
-                If Not finded Then problems2(n) = problems2(n) & userProblems(ii, 1) & ": 0" & vbLf
-            Next ii
-        Next n
+        ' For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста: Проблема - Количество
+        '     For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
+        '         finded = False
+        '         For i = LBound(problems) To UBound(problems)
+        '             If districts(n, 1) = problems(i, 1) Then
+        '                 If userProblems(ii, 1) = problems(i, 2) Then
+        '                     problems2(n) = problems2(n) & userProblems(ii, 1) & ": " & problems(i, 3) & vbLf
+        '                     finded = True
+        '                 End If
+        '             End If
+        '         Next i
+        '         If Not finded Then problems2(n) = problems2(n) & userProblems(ii, 1) & ": 0" & vbLf
+        '     Next ii
+        ' Next n
 
-        For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста Иные проблемы
-            otherProblems = 0
-                For i = LBound(problems) To UBound(problems)
-                    If districts(n, 1) = problems(i, 1) Then
-                        finded = False
-                        For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
-                            If userProblems(ii, 1) = problems(i, 2) Then
-                                finded = True
-                            End If
-                        Next ii
-                        If Not finded Then otherProblems = otherProblems + CInt(problems(i, 3))
+        ' For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста Иные проблемы
+        '     otherProblems = 0
+        '         For i = LBound(problems) To UBound(problems)
+        '             If districts(n, 1) = problems(i, 1) Then
+        '                 finded = False
+        '                 For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
+        '                     If userProblems(ii, 1) = problems(i, 2) Then
+        '                         finded = True
+        '                     End If
+        '                 Next ii
+        '                 If Not finded Then otherProblems = otherProblems + CInt(problems(i, 3))
+        '             End If
+        '         Next i
+        '     problems2(n) = problems2(n) & "Иные" & ": " & otherProblems
+        ' Next n
+
+        ReDim problems2(LBound(districts, 1) To UBound(districts, 1), LBound(userProblems, 1) To UBound(userProblems, 1))
+        
+        For i = LBound(districts, 1) To UBound(districts, 1)
+            For n = LBound(userProblems, 1) To UBound(userProblems, 1)
+                For k = LBound(problems, 1) To UBound(problems, 1)
+                    ' finded = false
+                    If (problems(k, 1) = districts(i, 1)) And (problems(k, 2) = userProblems(n, 1)) Then 
+                        problems2(i, n) = problems(k, 3)
+                        finded = True
                     End If
-                Next i
-            problems2(n) = problems2(n) & "Иные" & ": " & otherProblems
-        Next n
+                        ' if not finded and (problems(k, 1) = districts(i, 1)) then problems2(i, UBound(problems2, 2)) = problems2(i, UBound(problems2, 2)) + problems(k, 3)
+                        ' finded = false
+                Next k
+            Next n
+        Next i
+
+        For i = LBound(problems2, 1) to UBound(problems2, 1)
+            For j = LBound(problems2, 2) to UBound(problems2, 2)
+                if problems2(i, j) = Empty then problems2(i, j) = 0
+            next j
+        Next i
+
+        For k = LBound(problems, 1) To UBound(problems, 1)
+            For i = LBound(districts, 1) To UBound(districts, 1)
+                finded = false
+                For n = LBound(userProblems, 1) To UBound(userProblems, 1)
+                    If (problems(k, 1) = districts(i, 1)) then
+                        if (problems(k, 2) = userProblems(n, 1)) Then
+                            finded = true
+                        end if
+                    end if
+                Next n
+                if not finded and (problems(k, 1) = districts(i, 1)) then problems2(i, UBound(problems2, 2)) = problems2(i, UBound(problems2, 2)) + problems(k, 3)
+            next i
+        Next k
+
+
 
         sumProblemsAll = 0
         For i = LBound(problems) To UBound(problems) 'итоговое количество проблем по всем районам
@@ -245,13 +306,15 @@ Sub Stats()
     newWs.Name = Date & "_" & currTime(0) & "_" & currTime(1) & "_" & currTime(2)
     With newWs
         .Cells(1, 1) = "Отчет за " & reportDate
-        .Cells(2, 7).Resize(UBound(userProblems), UBound(userProblems, 2)).Value = userProblems
+        .Cells(2, 7).Resize(UBound(userProblems, 2), UBound(userProblems)).Value = Application.Transpose(userProblems)
+        .Cells(3, 7).Resize(UBound(problems2), UBound(problems2, 2)).Value = problems2
+        
         For i = LBound(districts) To UBound(districts)
             Cells(i + 2, 1) = districts(i, 1)
             Cells(i + 2, 2) = districts(i, 2)
             Cells(i + 2, 3) = resultDistrictsPlan(i)
             Cells(i + 2, 4) = resultDistrictsFact(i)
-            Cells(i + 2, 5) = problems2(i)
+            ' Cells(i + 2, 5) = problems2(i)
             Cells(i + 2, 6) = effiency(i)
         Next i
         lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
@@ -311,3 +374,4 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
+
