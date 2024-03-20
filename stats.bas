@@ -40,11 +40,11 @@ Function ReDim2D(arr, Optional dRow% = 1)
     U2 = UBound(arr, 2)
     ReDim tArr(L1 To U1 + dRow, L2 To U2)
     For RR = L1 To U1
-        On Error Resume Next
         For CC = L2 To U2
+            On Error Resume Next
             tArr(RR, CC) = arr(RR, CC)
+            On Error GoTo 0
         Next CC
-        On Error GoTo 0
     Next RR
     ReDim2D = tArr
 End Function
@@ -70,7 +70,7 @@ Sub Stats()
         carriers = .ListObjects("Перевозчики").DataBodyRange.Value
         files = .ListObjects("Файлы").DataBodyRange.Value
         userProblems = .ListObjects("Проблемы").DataBodyRange.Value
-        userProblems = ReDim2D(userProblems)
+        userProblems = ReDim2D(userProblems, 1)
         userProblems(UBound(userProblems, 1), 1) = "Иные"
     End With
     
@@ -202,77 +202,36 @@ Sub Stats()
             End If
         Next i
 
-        Dim problems2 As Variant
-        ' ReDim problems2(LBound(districts, 1) To UBound(districts, 1))
-        
-        ' For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста: Проблема - Количество
-        '     For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
-        '         finded = False
-        '         For i = LBound(problems) To UBound(problems)
-        '             If districts(n, 1) = problems(i, 1) Then
-        '                 If userProblems(ii, 1) = problems(i, 2) Then
-        '                     problems2(n) = problems2(n) & userProblems(ii, 1) & ": " & problems(i, 3) & vbLf
-        '                     finded = True
-        '                 End If
-        '             End If
-        '         Next i
-        '         If Not finded Then problems2(n) = problems2(n) & userProblems(ii, 1) & ": 0" & vbLf
-        '     Next ii
-        ' Next n
+        Dim problemsResult, problemsDistrict As Variant
+        ReDim problemsResult(LBound(districts, 1) To UBound(districts, 1), LBound(userProblems, 1) To UBound(userProblems, 1))
+        problemsResult = ReDim2D(problemsResult, 1)
+        ReDim problemsDistrict(LBound(districts, 1) To UBound(districts, 1))
 
-        ' For n = LBound(districts, 1) To UBound(districts, 1) 'формирование итогового текста Иные проблемы
-        '     otherProblems = 0
-        '         For i = LBound(problems) To UBound(problems)
-        '             If districts(n, 1) = problems(i, 1) Then
-        '                 finded = False
-        '                 For ii = LBound(userProblems, 1) To UBound(userProblems, 1)
-        '                     If userProblems(ii, 1) = problems(i, 2) Then
-        '                         finded = True
-        '                     End If
-        '                 Next ii
-        '                 If Not finded Then otherProblems = otherProblems + CInt(problems(i, 3))
-        '             End If
-        '         Next i
-        '     problems2(n) = problems2(n) & "Иные" & ": " & otherProblems
-        ' Next n
-
-        ReDim problems2(LBound(districts, 1) To UBound(districts, 1), LBound(userProblems, 1) To UBound(userProblems, 1))
-        
-        For i = LBound(districts, 1) To UBound(districts, 1)
-            For n = LBound(userProblems, 1) To UBound(userProblems, 1)
-                For k = LBound(problems, 1) To UBound(problems, 1)
-                    ' finded = false
-                    If (problems(k, 1) = districts(i, 1)) And (problems(k, 2) = userProblems(n, 1)) Then 
-                        problems2(i, n) = problems(k, 3)
-                        finded = True
+        For i = LBound(districts, 1) To UBound(districts, 1) 'находим нужные проблемы из списка
+            For k = LBound(problems, 1) To UBound(problems, 1)
+                If problems(k, 1) = districts(i, 1) Then 
+                    finded = False
+                    problemsDistrict(i) = problemsDistrict(i) + problems(k, 3) 'сумма проблем по району
+                    For n = LBound(userProblems, 1) To UBound(userProblems, 1)
+                        If problems(k, 2) = userProblems(n, 1) Then 
+                            finded = True
+                            problemsResult(UBound(problemsResult, 1), n) = problemsResult(UBound(problemsResult, 1), n) + problems(k, 3) 'сумма проблем по проблеме 
+                            problemsResult(i, n) = problems(k, 3) 'количество нужной проблемы по району
+                        End If
+                    Next n
+                    If Not finded Then 
+                        problemsResult(i, UBound(problemsResult, 2)) = problemsResult(i, UBound(problemsResult, 2)) + problems(k, 3) 'сумма иных проблем
+                        problemsResult(UBound(problemsResult, 1), UBound(problemsResult, 2)) = problemsResult(UBound(problemsResult, 1), UBound(problemsResult, 2)) + problems(k, 3)
                     End If
-                        ' if not finded and (problems(k, 1) = districts(i, 1)) then problems2(i, UBound(problems2, 2)) = problems2(i, UBound(problems2, 2)) + problems(k, 3)
-                        ' finded = false
-                Next k
-            Next n
+                End If
+            Next k
         Next i
 
-        For i = LBound(problems2, 1) to UBound(problems2, 1)
-            For j = LBound(problems2, 2) to UBound(problems2, 2)
-                if problems2(i, j) = Empty then problems2(i, j) = 0
-            next j
+        For i = LBound(problemsResult, 1) To UBound(problemsResult, 1) 'пустоты заменяем на 0
+            For j = LBound(problemsResult, 2) To UBound(problemsResult, 2)
+                If problemsResult(i, j) = Empty Then problemsResult(i, j) = 0
+            Next j
         Next i
-
-        For k = LBound(problems, 1) To UBound(problems, 1)
-            For i = LBound(districts, 1) To UBound(districts, 1)
-                finded = false
-                For n = LBound(userProblems, 1) To UBound(userProblems, 1)
-                    If (problems(k, 1) = districts(i, 1)) then
-                        if (problems(k, 2) = userProblems(n, 1)) Then
-                            finded = true
-                        end if
-                    end if
-                Next n
-                if not finded and (problems(k, 1) = districts(i, 1)) then problems2(i, UBound(problems2, 2)) = problems2(i, UBound(problems2, 2)) + problems(k, 3)
-            next i
-        Next k
-
-
 
         sumProblemsAll = 0
         For i = LBound(problems) To UBound(problems) 'итоговое количество проблем по всем районам
@@ -307,14 +266,14 @@ Sub Stats()
     With newWs
         .Cells(1, 1) = "Отчет за " & reportDate
         .Cells(2, 7).Resize(UBound(userProblems, 2), UBound(userProblems)).Value = Application.Transpose(userProblems)
-        .Cells(3, 7).Resize(UBound(problems2), UBound(problems2, 2)).Value = problems2
+        .Cells(3, 7).Resize(UBound(problemsResult), UBound(problemsResult, 2)).Value = problemsResult
         
         For i = LBound(districts) To UBound(districts)
             Cells(i + 2, 1) = districts(i, 1)
             Cells(i + 2, 2) = districts(i, 2)
             Cells(i + 2, 3) = resultDistrictsPlan(i)
             Cells(i + 2, 4) = resultDistrictsFact(i)
-            ' Cells(i + 2, 5) = problems2(i)
+            Cells(i + 2, 5) = problemsDistrict(i)
             Cells(i + 2, 6) = effiency(i)
         Next i
         lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
@@ -325,11 +284,14 @@ Sub Stats()
         .Cells(lastRowMacroWb + 1, 5) = sumProblemsAll
         .Cells(lastRowMacroWb + 1, 6) = averageEffiency
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, 2)).Merge
+        .Range(.Cells(1, 1), .Cells(2, lastColumnMacroWb)).Font.Bold = True
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Font.Bold = True
+        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
+        .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
-        
+        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit        
         '---------------------------Сводная таблица---------------------------
         
         Set pivotRange = .Range(.Cells(2, 1), .Cells(lastRowMacroWb, lastColumnMacroWb))
@@ -354,6 +316,7 @@ Sub Stats()
             .Position = 1
         End With
         pivotTableResult.AddDataField pivotTableResult.PivotFields("% выполнения"), "Среднее по полю % выполнения", xlAverage
+        lastColumnMacroWb = .Cells(lastRowMacroWb + 5, 1).CurrentRegion.Columns.Count
         .Range(.Cells(lastRowMacroWb + 5, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).NumberFormat = "0%"
         .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
         .Range(.Cells(lastRowMacroWb + 6, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).HorizontalAlignment = xlCenter
@@ -361,7 +324,7 @@ Sub Stats()
         
         '---------------------------Сводная таблица конец---------------------------
         
-        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit
+        
     End With
 
     statsKpWb.Close SaveChanges:=False
@@ -374,4 +337,3 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
-
