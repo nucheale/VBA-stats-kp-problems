@@ -69,7 +69,21 @@ Sub Stats()
         districts = .ListObjects("Районы").DataBodyRange.Value
         carriers = .ListObjects("Перевозчики").DataBodyRange.Value
         files = .ListObjects("Файлы").DataBodyRange.Value
-        userProblems = .ListObjects("Проблемы").DataBodyRange.Value
+checkProblems:
+        If Not .ListObjects("Проблемы").DataBodyRange Is Nothing Then
+            userProblems = .ListObjects("Проблемы").DataBodyRange.Value
+        Else
+            MsgBox "В таблице Проблемы не заполнено ни одной строки"
+            GoTo errorExit
+        End If
+        emptyRow = False
+        For i = UBound(userProblems) To LBound(userProblems) Step -1
+            If userProblems(i, 1) = Empty Then
+                .ListObjects("Проблемы").ListRows(i).Delete
+                emptyRow = True
+            End If
+        Next i
+        If emptyRow Then GoTo checkProblems
         userProblems = ReDim2D(userProblems, 1)
         userProblems(UBound(userProblems, 1), 1) = "Иные"
     End With
@@ -209,17 +223,17 @@ Sub Stats()
 
         For i = LBound(districts, 1) To UBound(districts, 1) 'находим нужные проблемы из списка
             For k = LBound(problems, 1) To UBound(problems, 1)
-                If problems(k, 1) = districts(i, 1) Then 
+                If problems(k, 1) = districts(i, 1) Then
                     finded = False
                     problemsDistrict(i) = problemsDistrict(i) + problems(k, 3) 'сумма проблем по району
                     For n = LBound(userProblems, 1) To UBound(userProblems, 1)
-                        If problems(k, 2) = userProblems(n, 1) Then 
+                        If problems(k, 2) = userProblems(n, 1) Then
                             finded = True
-                            problemsResult(UBound(problemsResult, 1), n) = problemsResult(UBound(problemsResult, 1), n) + problems(k, 3) 'сумма проблем по проблеме 
+                            problemsResult(UBound(problemsResult, 1), n) = problemsResult(UBound(problemsResult, 1), n) + problems(k, 3) 'сумма проблем по проблеме
                             problemsResult(i, n) = problems(k, 3) 'количество нужной проблемы по району
                         End If
                     Next n
-                    If Not finded Then 
+                    If Not finded Then
                         problemsResult(i, UBound(problemsResult, 2)) = problemsResult(i, UBound(problemsResult, 2)) + problems(k, 3) 'сумма иных проблем
                         problemsResult(UBound(problemsResult, 1), UBound(problemsResult, 2)) = problemsResult(UBound(problemsResult, 1), UBound(problemsResult, 2)) + problems(k, 3)
                     End If
@@ -291,7 +305,7 @@ Sub Stats()
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).VerticalAlignment = xlCenter
         .Range(.Cells(lastRowMacroWb + 1, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).HorizontalAlignment = xlCenter
         .Range(.Cells(2, 1), .Cells(lastRowMacroWb + 1, lastColumnMacroWb)).Borders.LineStyle = xlContinuous
-        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit        
+        .Range(.Cells(1, 1), .Cells(lastRowMacroWb + 5 + UBound(districts, 1) + 2, lastColumnMacroWb)).Columns.AutoFit
         '---------------------------Сводная таблица---------------------------
         
         Set pivotRange = .Range(.Cells(2, 1), .Cells(lastRowMacroWb, lastColumnMacroWb))
@@ -337,3 +351,5 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
+
+
