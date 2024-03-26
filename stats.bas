@@ -338,7 +338,24 @@ checkProblems:
         
         '---------------------------Сводная таблица конец---------------------------
         
-        
+
+        '---------------------------Экспорт pdf---------------------------
+        lastRowMacroWb = .Cells(Rows.Count, 1).End(xlUp).Row
+        lastColumnMacroWb = .Cells.SpecialCells(xlLastCell).Column
+        pdfFileName = ActiveWorkbook.Path & "\" & "Проблемы КП " & Format(Now, "DD.MM.YYYY") & ".pdf"
+        .PageSetup.PrintArea = .Range(.Cells(1, 1), .Cells(lastRowMacroWb, lastColumnMacroWb)).Address
+        .PageSetup.Orientation = xlLandscape
+        .PageSetup.PaperSize = xlPaperLetter
+        .PageSetup.FitToPagesWide = 1
+        .PageSetup.FitToPagesTall = 1
+        .PageSetup.LeftMargin = Application.InchesToPoints(0.1)
+        .PageSetup.RightMargin = Application.InchesToPoints(0.1)
+        .PageSetup.TopMargin = Application.InchesToPoints(0.1)
+        .PageSetup.BottomMargin = Application.InchesToPoints(0.1)
+        .PageSetup.Zoom = False
+        .Range(.Cells(1, 1), .Cells(lastRowMacroWb, lastColumnMacroWb)).ExportAsFixedFormat Type:=xlTypePDF, Filename:=pdfFileName, OpenAfterPublish:=True
+        '---------------------------Экспорт pdf конец---------------------------
+
     End With
 
     statsKpWb.Close SaveChanges:=False
@@ -351,5 +368,6 @@ errorExit:
         .Calculation = xlCalculationAutomatic
     End With
 End Sub
+
 
 
